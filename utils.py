@@ -154,17 +154,19 @@ def get_clean_factor_and_forward_returns(factor,
         sample_end_date,
     ).replace(False, np.NaN).T.stack().index  # stack在堆叠时自动删除NaN值，所以将不需要的点转为np.NaN; T转置是为了保证index形状一致
     
+    # FIXMEd: 原本这里factor和clean_forward_returns的index顺序不同，factor是time_field在前，clean_forward_returns是asset_field在前
+    #         修改clean_forward_returns的index顺序
     clean_forward_returns = forward_returns[
         (~forward_returns.index.isin(idx_novol)) & 
         (~forward_returns.index.isin(idx_st))
-    ]
+    ].swaplevel(time_field, asset_field)
     
     factor_data = (
-        factor.merge(clean_forward_returns, on=[asset_field, time_field], how='inner')
-        .dropna(subset=['1D'])
-        .set_index([time_field, asset_field])
+        factor.merge(clean_forward_returns, on=[time_field, asset_field], how='inner')
+        .dropna(subset=['1D']).sort_index()
     )
     return factor_data
+
 
 
 # 函数测试
