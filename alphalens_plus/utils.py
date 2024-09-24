@@ -108,7 +108,7 @@ def compute_forward_returns(
 
     df = pd.DataFrame.from_dict(raw_values_dict)
     if drop_na:
-        df.dropna(subset=drop_na_by, inplace=True)
+        df.dropna(subset=[drop_na_by], inplace=True)
 
     # 20240112: 超额收益率一律在本函数外计算，本函数内最多同时计算指数的远期收益率（将指数当作一个asset）
     # if with_excess:
@@ -373,7 +373,9 @@ def quantize_factor(factor_data,
                 return pd.concat([pos_bins, neg_bins]).sort_index()
         except Exception as e:
             if _no_raise:
-                return pd.Series(index=x.index)
+                msg = "quantiles error, return raw values in one group."
+                # return pd.Series(quantiles, index=x.index)
+                return x
             raise e
 
     grouper = [factor_data.index.get_level_values('date')]
@@ -422,7 +424,7 @@ def get_benchmark_returns(
     # 来源2：本地api
     import jtdata
     end_trddt = jtdata.get_next_trading_date(end_date, 2)
-    prices = jtdata.get_price(benchmark_order_book_id, start_date, end_trddt, adjust_type=adjust_type, frequency='1d')
+    prices = jtdata.get_price(benchmark_order_book_id, start_date, end_trddt, adjust_type=adjust_type, frequency='1d').set_index(['date', 'order_book_id'])
     forward_returns = compute_forward_returns(
         prices, periods=periods, method=method,
     ).reset_index(0, drop=True)  # 这里compute_forward_returns返回的是order_book_id为0索引，date为1索引
