@@ -13,3 +13,5 @@
   + 大佬Stefan Jansen维护的alphalens项目，对最新版本python进行适配，可复用程度较高。
   + 是主要学习和参考的项目。
 
++ [github:vnpy_alphalens](https://github.com/vnpy/vnpy_alphalens)
+  + vnpy的自适应版，更多面向回测系统使用，次要学习和参考项目。
