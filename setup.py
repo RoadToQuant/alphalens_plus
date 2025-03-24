@@ -18,6 +18,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'loguru',
+        'six',
+        'statsmodels',
         'scipy',
         'matplotlib',
         'seaborn',
