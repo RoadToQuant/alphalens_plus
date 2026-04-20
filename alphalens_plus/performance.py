@@ -136,15 +136,15 @@ def factor_weights(factor_data,
 
         return group / group.abs().sum()
 
-    grouper = [factor_data.index.get_level_values('date')]
+    grouper = ['date']
     if group_adjust:
         grouper.append('group')
 
-    weights = factor_data.groupby(grouper)['factor'].apply(
+    weights = factor_data.groupby(grouper, group_keys=False)['factor'].apply(
         to_weights, demeaned, equal_weight)
 
     if group_adjust:
-        weights = weights.groupby(level='date').apply(
+        weights = weights.groupby(level='date', group_keys=False).apply(
             to_weights, False, False)
 
     return weights.rename('weight')
@@ -280,14 +280,14 @@ def factor_information_coefficient(factor_data,
 
     factor_data = factor_data.copy()
 
-    grouper = [factor_data.index.get_level_values('date')]
+    grouper = ['date']
 
     if group_adjust:
         factor_data = utils.demean_forward_returns(factor_data, grouper + ['group'])
     if by_group:
         grouper.append('group')
 
-    ic = factor_data.groupby(grouper).apply(src_ic)
+    ic = factor_data.groupby(grouper, group_keys=False).apply(src_ic)
 
     return ic
 

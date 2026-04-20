@@ -19,13 +19,13 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install setuptools and wheel
+      - name: Install build dependencies
         run: |
-          pip install --upgrade setuptools wheel
+          pip install --upgrade build
 
       - name: Build wheel
         run: |
-          python setup.py bdist_wheel
+          python -m build --wheel
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v3

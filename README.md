@@ -1,14 +1,87 @@
 # AlphalensPlus: A better toolbox for factors' alpha analysis
 
-基于[Quantopian](https://github.com/quantopian)的[Alphalens](https://github.com/quantopian/alphalens)开发的升级版因子分析工具箱。
+基于 [Quantopian](https://github.com/quantopian) 的 [Alphalens](https://github.com/quantopian/alphalens) 开发的升级版因子分析工具箱，针对 A 股市场数据结构与交易规则做了适配与增强。
 
-## Logging
+## 安装
 
-+ 20241223:
-  + alphalens_plus中的plotting主要包含针对量化投资的集成度较高的绘图工具，可以结合[mplfinance]这个模组进行更新和加强，
-    而这也是放在alphalens_plus的原因，因为alphalens_plus的导出结果一般都是returns和weights等，
-    同时需要与行情数据结合查看，所以放在一起（同时还绑定empyrical）。
-  + 而其他类似dash、plotly、bokech则由于更偏向可视化，所以是单独模组负责，更多是属于alphalens的下游模组（接收alphalens的输出）。
+```bash
+# 使用 uv（推荐）
+uv pip install -e ".[opt]"
+
+# 或使用 pip
+pip install -e ".[opt]"
+```
+
+> 若不需要组合优化（`opt` 模块），可省略 `[opt]`，无需安装 `cvxpy`。
+
+## 快速开始
+
+以下示例展示从**模拟数据**到**生成完整分析报告**的最小流程：
+
+```python
+import pandas as pd
+import numpy as np
+import alphalens_plus as ap
+
+# 1. 构造模拟行情数据（长面板）
+#    索引：(order_book_id, date)，必须包含 close 与 open 列
+dates = pd.date_range('2023-01-01', periods=20, freq='B')
+assets = ['000001.XSHE', '000002.XSHE', '000009.XSHE', '000012.XSHE']
+np.random.seed(42)
+
+prices = pd.DataFrame(
+    {
+        'close': 100 * np.exp(np.cumsum(np.random.randn(80) * 0.02 + 0.001)),
+        'open' : 100 * np.exp(np.cumsum(np.random.randn(80) * 0.02 + 0.001)),
+    },
+    index=pd.MultiIndex.from_product(
+        [assets, dates], names=['order_book_id', 'date']
+    )
+)
+
+# 2. 构造模拟因子数据（长面板）
+#    索引：(date, order_book_id)，列名为 factor
+factor = pd.DataFrame(
+    np.random.randn(80),
+    index=pd.MultiIndex.from_product(
+        [dates, assets], names=['date', 'order_book_id']
+    ),
+    columns=['factor']
+)
+
+# 3. 计算清洗后的因子与远期收益率
+factor_data = ap.get_clean_factor_and_forward_returns(
+    factor, prices, periods=(1, 5), method='open-to-open'
+)
+
+# 4. 生成完整 Tear Sheet 分析报告
+ap.create_full_tear_sheet(factor_data)
+```
+
+### 核心 API 速览
+
+`alphalens_plus` 已将最常用函数暴露在包顶层，可直接通过 `import alphalens_plus as ap` 调用：
+
+| 功能 | 顶层 API |
+|------|----------|
+| 清洗因子 + 计算远期收益 | `ap.get_clean_factor_and_forward_returns` |
+| 因子分位数分层 | `ap.quantize_factor` |
+| 因子排序 | `ap.rank_factor` |
+| 信息系数 IC | `ap.factor_information_coefficient` |
+| 平均 IC | `ap.mean_information_coefficient` |
+| 组合权重 | `ap.factor_weights` |
+| 完整 Tear Sheet | `ap.create_full_tear_sheet` |
+| 最小方差优化 | `ap.min_variance`（需安装 `cvxpy`） |
+
+若需更细粒度的控制，仍可按需导入子模块：
+
+```python
+from alphalens_plus import utils, performance, plotting, tears
+```
+
+## 日志与更新记录
+
+项目开发日志已迁移至 [LOGGING.md](LOGGING.md)。
 
 ## References
 
