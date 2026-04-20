@@ -2,9 +2,7 @@ import numpy as np
 import pandas as pd
 import sys
 
-python_version = sys.winver
-
-if python_version >= '3.9':
+if sys.version_info >= (3, 9):
     import cvxpy as cp
 else:
     raise ImportError("cvxpy only support python>=3.9!")

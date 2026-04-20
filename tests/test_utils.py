@@ -1,23 +1,45 @@
-from alphalens_plus.utils import compute_forward_returns
-from pandas import (
-    Series,
-    DataFrame,
-    date_range,
-    MultiIndex,
-    Timedelta,
-    Timestamp,
-    concat,
-    read_parquet
-)
+import numpy as np
+import pandas as pd
+import pytest
+from alphalens_plus import utils
 
 
-dr = date_range(start='2015-1-1', end='2015-1-3')
-mindex = MultiIndex.from_product([['A', 'B'], dr], names=['inst_id', 'date'])
-prices = DataFrame(index=mindex, columns=['close', 'open'],
-                   data=[[1, 1], [1, 2], [2, 1], [3, 1], [4, 2], [2, 1]])
-prices = read_parquet(r'D:\msliu\projects\temp\prices_copy.parquet').set_index(['order_book_id', 'date'])
-prices.index.names = ['inst_id', 'date']
+def test_compute_forward_returns_open_to_open(mock_prices):
+    result = utils.compute_forward_returns(
+        mock_prices, periods=(1, 2), method='open-to-open'
+    )
+    assert '1D' in result.columns
+    assert '2D' in result.columns
+    assert result['1D'].notna().sum() > 0
 
-fp = compute_forward_returns(prices, periods=[1, 2], on_open=False, filter_zscore=20)
-print(fp.isnull().sum())
-print(fp.shape)
+
+def test_compute_forward_returns_close_to_close(mock_prices):
+    result = utils.compute_forward_returns(
+        mock_prices, periods=(1,), method='close-to-close'
+    )
+    assert '1D' in result.columns
+    assert result['1D'].notna().sum() > 0
+
+
+def test_get_clean_factor_and_forward_returns(mock_prices, mock_factor):
+    result = utils.get_clean_factor_and_forward_returns(
+        mock_factor, mock_prices, periods=(1,), method='open-to-open'
+    )
+    assert 'factor' in result.columns
+    assert '1D' in result.columns
+    assert result.index.names == ['date', 'order_book_id']
+
+
+def test_quantize_factor(mock_factor):
+    factor_data = mock_factor.copy()
+    q = utils.quantize_factor(factor_data, quantiles=5)
+    assert q.name == 'factor_quantile'
+    assert set(q.dropna().unique()).issubset({1, 2, 3, 4, 5})
+
+
+def test_rank_factor(mock_factor):
+    factor_data = mock_factor.copy()
+    r = utils.rank_factor(factor_data, ascending=False)
+    assert r.name == 'factor_rank'
+    for _, group in r.groupby(level='date'):
+        assert sorted(group.values) == [1, 2, 3]
