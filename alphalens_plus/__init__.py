@@ -1,4 +1,4 @@
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 # 将最常用的 API 直接暴露在包顶层，简化外部调用
 from .utils import (
